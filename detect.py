@@ -13,7 +13,21 @@ from utils.general import check_img_size, check_requirements, check_imshow, non_
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
+from utils.datasets import letterbox
+from PIL import Image
 
+
+def letterbox_image(image, size):
+    iw, ih = image.size
+    w, h = size
+    scale = min(w / iw, h / ih)
+    nw = int(iw * scale)
+    nh = int(ih * scale)
+
+    image = image.resize((nw, nh), Image.BICUBIC)
+    new_image = Image.new("RGB", size, (128, 128, 128))
+    new_image.paste(image, ((w - nw) // 2, (h - nh) // 2))
+    return new_image
 
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
@@ -69,6 +83,7 @@ def detect(save_img=False):
 
         # Inference
         t1 = time_synchronized()
+        #img = letterbox_image(img, (640, 640))
         pred = model(img, augment=opt.augment)[0]
 
         # Apply NMS

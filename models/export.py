@@ -59,25 +59,26 @@ if __name__ == '__main__':
     y = model(img)  # dry run
 
     # TorchScript export
-    try:
-        print('\nStarting TorchScript export with torch %s...' % torch.__version__)
-        f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
-        ts = torch.jit.trace(model, img, strict=False)
-        ts.save(f)
-        print('TorchScript export success, saved as %s' % f)
-    except Exception as e:
-        print('TorchScript export failure: %s' % e)
+    #try:
+    #    print('\nStarting TorchScript export with torch %s...' % torch.__version__)
+    #    f = opt.weights.replace('.pt', '.torchscript.pt')  # filename
+    #    ts = torch.jit.trace(model, img, strict=False)
+    #    ts.save(f)
+    #    print('TorchScript export success, saved as %s' % f)
+    #except Exception as e:
+    #    print('TorchScript export failure: %s' % e)
 
     # ONNX export
     try:
         import onnx
 
         print('\nStarting ONNX export with onnx %s...' % onnx.__version__)
-        f = opt.weights.replace('.pt', '.onnx')  # filename
-        torch.onnx.export(model, img, f, verbose=False, opset_version=12, input_names=['images'],
+        f = f"{opt.weights.replace('.pt', '')}_img-{'-'.join(map(str, opt.img_size))}_batch-{opt.batch_size}_device-{opt.device}_dynamic-{opt.dynamic}_grid-{opt.grid}.onnx"
+        #f = opt.weights.replace('.pt', '.onnx')  # filename
+        torch.onnx.export(model, img, f, verbose=False, opset_version=12,
+                          input_names=['images'],
                           output_names=['classes', 'boxes'] if y is None else ['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # size(1,3,640,640)
-                                        'output': {0: 'batch', 2: 'y', 3: 'x'}} if opt.dynamic else None)
+                          dynamic_axes={'images': {2: 'height', 3: 'width'}} if opt.dynamic else None)  # size(1,3,640,640)
 
         # Checks
         onnx_model = onnx.load(f)  # load onnx model
@@ -88,17 +89,17 @@ if __name__ == '__main__':
         print('ONNX export failure: %s' % e)
 
     # CoreML export
-    try:
-        import coremltools as ct
-
-        print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
-        # convert model from torchscript and apply pixel scaling as per detect.py
-        model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
-        f = opt.weights.replace('.pt', '.mlmodel')  # filename
-        model.save(f)
-        print('CoreML export success, saved as %s' % f)
-    except Exception as e:
-        print('CoreML export failure: %s' % e)
+    #try:
+    #    import coremltools as ct
+    #
+    #    print('\nStarting CoreML export with coremltools %s...' % ct.__version__)
+    #    # convert model from torchscript and apply pixel scaling as per detect.py
+    #    model = ct.convert(ts, inputs=[ct.ImageType(name='image', shape=img.shape, scale=1 / 255.0, bias=[0, 0, 0])])
+    #    f = opt.weights.replace('.pt', '.mlmodel')  # filename
+    #    model.save(f)
+    #    print('CoreML export success, saved as %s' % f)
+    #except Exception as e:
+    #    print('CoreML export failure: %s' % e)
 
     # Finish
     print('\nExport complete (%.2fs). Visualize with https://github.com/lutzroeder/netron.' % (time.time() - t))
