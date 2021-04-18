@@ -200,6 +200,6 @@ if __name__ == '__main__':
                 predictor.detect()
                 strip_optimizer(opt.weights)
         else:
-            #pred_result_torch = predictor.detect()
-            pred_result_onnx = predictor_onnx.detect()
+            pred_result_torch = predictor.detect()
+            #pred_result_onnx = predictor_onnx.detect()
             print(type(0))

@@ -114,10 +114,10 @@ class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tra
 print(f"class number: {len(class_names)}")
 
 ANCHORS = [
-    [116, 90, 156, 198, 373, 326],
-    [30, 61, 62, 45, 59, 119],
-    [10, 13, 16, 30, 33, 23]
-]  # 5s
+        [10, 13, 16, 30, 33, 23],
+        [30, 61, 62, 45, 59, 119],
+        [116, 90, 156, 198, 373, 326],
+    ]
 
 
 def letterbox_image(image, size):
@@ -266,7 +266,7 @@ def display(detections=None, image_path=None, line_thickness=None, text_bg_alpha
 
     tl = line_thickness or round(0.002 * (w + h) / 2) + 1
     for i, box in enumerate(boxs):
-        x1, y1, x2, y2 = box
+        x1, y1, x2, y2 = map(int, box)
         np.random.seed(int(labels[i].numpy()) + 2020)
         color = [np.random.randint(0, 255), 0, np.random.randint(0, 255)]
         cv2.rectangle(image_src, (x1, y1), (x2, y2), color, thickness=max(int((w + h) / 600), 1), lineType=cv2.LINE_AA)

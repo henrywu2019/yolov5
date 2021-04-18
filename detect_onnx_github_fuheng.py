@@ -187,7 +187,7 @@ def detect_onnx(official=True, image_path=None):
     batch_size = session.get_inputs()[0].shape[0]
     img_size_h = session.get_inputs()[0].shape[2]
     img_size_w = session.get_inputs()[0].shape[3]
-    img_size_h, img_size_w = 640, 480
+    batch_size = 1
 
     # input
     img0 = cv2.imread(image_path)
@@ -204,6 +204,7 @@ def detect_onnx(official=True, image_path=None):
     #img_in = np.expand_dims(img_in, axis=0)
     #img_in /= 255.0
     img = letterbox(img0, 640, stride=32)[0]
+    img_size_h, img_size_w, _ = img.shape
     img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
     img = np.ascontiguousarray(img)
 
@@ -241,9 +242,10 @@ def detect_onnx(official=True, image_path=None):
             outputs = [outputs[1], outputs[2], outputs[3]]
         for index, out in enumerate(outputs):
             out = torch.from_numpy(out)
-            batch = out.shape[1]
-            feature_w = out.shape[2]
-            feature_h = out.shape[3]
+            batch = out.shape[0]
+            feature_h = out.shape[2]
+            feature_w = out.shape[3]
+            #feature_h = out.shape[2]
 
             # Feature map corresponds to the original image zoom factor
             stride_w = int(img_size_w / feature_w)
@@ -273,12 +275,13 @@ def detect_onnx(official=True, image_path=None):
             boxs.append(output)
         outputx = torch.cat(boxs, 1)
         # NMS
-        batch_detections = w_non_max_suppression(outputx, num_classes, conf_thres=0.25, nms_thres=0.45)
+        batch_detections = non_max_suppression(outputx, conf_thres=0.25, iou_thres=0.45, agnostic=False)
+        #batch_detections = w_non_max_suppression(outputx, num_classes, conf_thres=0.25, nms_thres=0.45)
 
-    return batch_detections
+    return batch_detections, img_size_h, img_size_w
 
 
-def display(detections=None, image_path=None, line_thickness=None, text_bg_alpha=0.0):
+def display(detections, img_size_h, img_size_w, image_path=None, line_thickness=None, text_bg_alpha=0.0):
     print("*"*80)
     labels = detections[..., -1]
     boxs = detections[..., :4]
@@ -291,7 +294,7 @@ def display(detections=None, image_path=None, line_thickness=None, text_bg_alpha
     # resized = np.array(resized)
     image_src = np.array(image_src)
 
-    boxs[:, :] = scale_coords((640, 640), boxs[:, :], (h, w)).round()
+    boxs[:, :] = scale_coords((img_size_h, img_size_w), boxs[:, :], (h, w)).round()
 
     tl = line_thickness or round(0.002 * (w + h) / 2) + 1
     for i, box in enumerate(boxs):
@@ -327,8 +330,8 @@ if __name__ == '__main__':
     plt.style.use(['fast'])
     plt.rcParams['figure.facecolor'] = 'gray'
 
-    image_path = './data/images/bus.jpg'
+    image_path = './data/images/zidane.jpg'
     with torch.no_grad():
-        detections = detect_onnx(official=0, image_path=image_path)
+        detections, h, w = detect_onnx(official=0, image_path=image_path)
         if detections[0] is not None:
-            display(detections[0], image_path, text_bg_alpha=0.6)
+            display(detections[0], h, w, image_path, text_bg_alpha=0.6)
