@@ -64,7 +64,7 @@ def export(weights='./yolov5s.pt',  # weights path
                 m.act = Hardswish()
             elif isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
-        elif isinstance(m, models.yolo.Detect):
+        elif isinstance(m, Detect):
             m.inplace = opt.inplace
             m.onnx_dynamic = opt.dynamic
             fa = opt.weights.replace('.pt', '.anchor.pt')  # anchor filename
