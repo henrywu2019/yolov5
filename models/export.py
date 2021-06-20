@@ -56,6 +56,7 @@ def export(weights='./yolov5s.pt',  # weights path
     if half:
         img, model = img.half(), model.half()  # to FP16
     model.train() if train else model.eval()  # training mode = no Detect() layer grid construction
+
     for k, m in model.named_modules():
         m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
         if isinstance(m, Conv):  # assign export-friendly activations
@@ -63,9 +64,15 @@ def export(weights='./yolov5s.pt',  # weights path
                 m.act = Hardswish()
             elif isinstance(m.act, nn.SiLU):
                 m.act = SiLU()
-        elif isinstance(m, Detect):
-            m.inplace = inplace
-            m.onnx_dynamic = dynamic
+        elif isinstance(m, models.yolo.Detect):
+            m.inplace = opt.inplace
+            m.onnx_dynamic = opt.dynamic
+            fa = opt.weights.replace('.pt', '.anchor.pt')  # anchor filename
+            ag = m.anchor_grid
+            ab = ag.resize(3, 6)
+            print(ab)
+            torch.save(ab, fa)
+            print(f'{fa} export success')
             # m.forward = m.forward_export  # assign forward (optional)
 
     for _ in range(2):
