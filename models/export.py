@@ -111,7 +111,7 @@ def export(weights='./yolov5s.pt',  # weights path
             # Checks
             model_onnx = onnx.load(f)  # load onnx model
             onnx.checker.check_model(model_onnx)  # check onnx model
-            # print(onnx.helper.printable_graph(model_onnx.graph))  # print
+            print(onnx.helper.printable_graph(model_onnx.graph))  # print
 
             # Simplify
             if simplify:
